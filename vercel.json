@@ -1,8 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pnpm install --filter @sportsphere/web...",
-  "buildCommand": "pnpm --filter @sportsphere/web build",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs",
-  "regions": ["iad1"]
-}

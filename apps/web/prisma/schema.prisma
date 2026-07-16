@@ -1,0 +1,825 @@
+// ─────────────────────────────────────────────
+// SPORTSPHERE AI - SIMPLIFIED MVP SCHEMA
+// ─────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+  EDITOR
+  JOURNALIST
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  FACEBOOK
+  APPLE
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  IN_PROGRESS
+  INNINGS_BREAK
+  COMPLETED
+  ABANDONED
+  CANCELLED
+  POSTPONED
+}
+
+enum MatchFormat {
+  TEST
+  ODI
+  T20
+  T10
+  FOOTBALL_90
+  BASKETBALL
+  TENNIS
+  F1
+  UFC
+  OTHER
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum NotificationType {
+  GOAL
+  WICKET
+  MATCH_START
+  MATCH_END
+  BREAKING_NEWS
+  TRANSFER
+  CUSTOM
+}
+
+// ─────────────────────────────────────────────
+// 1. USER & AUTH
+// ─────────────────────────────────────────────
+
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  username        String         @unique
+  passwordHash    String?
+  firstName       String
+  lastName        String
+  displayName     String?
+  avatar          String?
+  bio             String?
+  role            UserRole       @default(USER)
+  isEmailVerified Boolean        @default(false)
+  isActive        Boolean        @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  comments             Comment[]
+  bookmarks            Bookmark[]
+  favorites            Favorite[]
+  notifications        Notification[]
+  notificationPrefs    NotificationPreference[]
+  subscriptions        Subscription[]
+  articles             Article[]             @relation("ArticleAuthor")
+  followedTeams        TeamFollow[]
+  followedPlayers      PlayerFollow[]
+  newsletterSubscribers NewsletterSubscriber?
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Account {
+  id                String        @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?       @db.Text
+  access_token      String?       @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?       @db.Text
+  session_state     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────
+// 2. SPORTS
+// ─────────────────────────────────────────────
+
+model Sport {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String?
+  logo        String?
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tournaments Tournament[]
+  teams       Team[]
+  players     Player[]
+  matches     Match[]
+  articles    Article[]
+  headToHeads HeadToHead[]
+  predictions Prediction[]
+
+  @@map("sports")
+}
+
+model Tournament {
+  id          String      @id @default(cuid())
+  sportId     String
+  name        String
+  slug        String
+  logo        String?
+  description String?     @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean     @default(true)
+  isCurrent   Boolean     @default(false)
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  sport       Sport       @relation(fields: [sportId], references: [id])
+  matches     Match[]
+  standings   Standing[]
+  articles    Article[]
+
+  @@unique([sportId, slug])
+  @@index([sportId])
+  @@map("tournaments")
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  sportId     String
+  name        String
+  shortName   String?
+  slug        String
+  logo        String?
+  primaryColor String?
+  secondaryColor String?
+  country     String?
+  city        String?
+  founded     Int?
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sport           Sport            @relation(fields: [sportId], references: [id])
+  players         Player[]
+  homeMatches     Match[]          @relation("HomeTeam")
+  awayMatches     Match[]          @relation("AwayTeam")
+  matchPlayers    MatchPlayer[]
+  standings       Standing[]
+  followedBy      TeamFollow[]
+  headToHeadHome  HeadToHead[]     @relation("HomeTeam")
+  headToHeadAway  HeadToHead[]     @relation("AwayTeam")
+
+  @@unique([sportId, slug])
+  @@index([sportId])
+  @@map("teams")
+}
+
+model Player {
+  id          String   @id @default(cuid())
+  sportId     String
+  teamId      String?
+  firstName   String
+  lastName    String
+  slug        String
+  avatar      String?
+  dateOfBirth DateTime?
+  nationality String?
+  role        String?
+  battingStyle String?
+  bowlingStyle String?
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sport           Sport            @relation(fields: [sportId], references: [id])
+  team            Team?            @relation(fields: [teamId], references: [id])
+  matchPlayers    MatchPlayer[]
+  followedBy      PlayerFollow[]
+  manOfTheMatch   Match[]          @relation("ManOfTheMatch")
+
+  @@unique([sportId, slug])
+  @@index([sportId])
+  @@index([teamId])
+  @@map("players")
+}
+
+model Venue {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  city      String?
+  country   String?
+  capacity  Int?
+  imageUrl  String?
+  pitchType String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches Match[]
+
+  @@map("venues")
+}
+
+// ─────────────────────────────────────────────
+// 3. MATCHES
+// ─────────────────────────────────────────────
+
+model Match {
+  id              String      @id @default(cuid())
+  sportId         String
+  tournamentId    String?
+  homeTeamId      String?
+  awayTeamId      String?
+  venueId         String?
+  status          MatchStatus @default(SCHEDULED)
+  format          MatchFormat @default(OTHER)
+  scheduledAt     DateTime
+  startedAt       DateTime?
+  completedAt     DateTime?
+  homeScore       Int?
+  awayScore       Int?
+  homeOvers       Float?
+  awayOvers       Float?
+  result          String?
+  tossWinner      String?
+  tossDecision    String?
+  weather         Json?
+  pitchReport     Json?
+  metadata        Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  sport           Sport            @relation(fields: [sportId], references: [id])
+  tournament      Tournament?      @relation(fields: [tournamentId], references: [id])
+  homeTeam        Team?            @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam        Team?            @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  venue           Venue?           @relation(fields: [venueId], references: [id])
+  manOfTheMatch   Player?          @relation("ManOfTheMatch", fields: [manOfTheMatchId], references: [id])
+  matchPlayers    MatchPlayer[]
+  innings         MatchInning[]
+  commentary      Commentary[]
+  liveScore       LiveScore?
+  winProbability  WinProbability[]
+  runRate         RunRate[]
+  articles        Article[]
+  predictions     Prediction[]
+  ballByBall      BallByBall[]
+
+  manOfTheMatchId String?
+
+  @@index([sportId])
+  @@index([tournamentId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
+}
+
+model MatchPlayer {
+  id        String   @id @default(cuid())
+  matchId   String
+  playerId  String
+  teamId    String
+  isPlaying Boolean  @default(true)
+  isCaptain Boolean  @default(false)
+  isKeeper  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([matchId, playerId])
+  @@index([matchId])
+  @@index([playerId])
+  @@index([teamId])
+  @@map("match_players")
+}
+
+model MatchInning {
+  id         String   @id @default(cuid())
+  matchId    String
+  inningNumber Int
+  teamId     String?
+  runs       Int      @default(0)
+  wickets    Int      @default(0)
+  overs      Float    @default(0)
+  extras     Int      @default(0)
+  declared  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  match       Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  scores      MatchScore[]
+  commentary  Commentary[]
+  ballByBall  BallByBall[]
+
+  @@unique([matchId, inningNumber])
+  @@index([matchId])
+  @@map("match_innings")
+}
+
+model MatchScore {
+  id        String   @id @default(cuid())
+  inningId  String
+  teamId    String
+  runs      Int      @default(0)
+  wickets   Int      @default(0)
+  overs     Float    @default(0)
+  runRate   Float?
+  createdAt DateTime @default(now())
+
+  inning MatchInning @relation(fields: [inningId], references: [id], onDelete: Cascade)
+
+  @@index([inningId])
+  @@map("match_scores")
+}
+
+// ─────────────────────────────────────────────
+// 4. LIVE DATA
+// ─────────────────────────────────────────────
+
+model LiveScore {
+  id            String   @id @default(cuid())
+  matchId       String   @unique
+  currentInning Int?
+  battingTeam   String?
+  bowlingTeam   String?
+  currentScore  Json?
+  lastUpdated   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("live_scores")
+}
+
+model Commentary {
+  id          String   @id @default(cuid())
+  matchId     String
+  inningId    String?
+  over        Float?
+  ball        Int?
+  content     String   @db.Text
+  eventType  String?
+  runs        Int?
+  wicket      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  match  Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  inning MatchInning?  @relation(fields: [inningId], references: [id])
+
+  @@index([matchId])
+  @@index([inningId])
+  @@index([createdAt])
+  @@map("commentary")
+}
+
+model BallByBall {
+  id            String   @id @default(cuid())
+  matchId       String
+  inningId      String?
+  over          Float
+  ball          Int
+  batsmanId     String?
+  bowlerId      String?
+  nonStrikerId  String?
+  runs          Int      @default(0)
+  extras        Int      @default(0)
+  wicket        Boolean  @default(false)
+  wicketType    String?
+  description   String?
+  createdAt     DateTime @default(now())
+
+  match  Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  inning MatchInning? @relation(fields: [inningId], references: [id])
+
+  @@index([matchId])
+  @@index([inningId])
+  @@map("ball_by_ball")
+}
+
+model WinProbability {
+  id        String   @id @default(cuid())
+  matchId   String
+  teamId    String
+  probability Float
+  over      Float?
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("win_probability")
+}
+
+model RunRate {
+  id        String   @id @default(cuid())
+  matchId   String
+  teamId    String
+  runRate   Float
+  requiredRate Float?
+  over      Float
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("run_rate")
+}
+
+// ─────────────────────────────────────────────
+// 5. NEWS & ARTICLES
+// ─────────────────────────────────────────────
+
+model Article {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  excerpt       String?       @db.Text
+  content       String        @db.Text
+  coverImage    String?
+  authorId      String?
+  sportId       String?
+  tournamentId  String?
+  matchId       String?
+  status        ArticleStatus @default(DRAFT)
+  publishedAt   DateTime?
+  viewCount     Int           @default(0)
+  likeCount     Int           @default(0)
+  commentCount  Int           @default(0)
+  isFeatured    Boolean       @default(false)
+  isBreaking    Boolean       @default(false)
+  seoTitle      String?
+  seoDescription String?
+  tags          String[]
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  author     User?        @relation("ArticleAuthor", fields: [authorId], references: [id])
+  sport      Sport?       @relation(fields: [sportId], references: [id])
+  tournament Tournament?  @relation(fields: [tournamentId], references: [id])
+  match      Match?       @relation(fields: [matchId], references: [id])
+  categories ArticleCategory[]
+  tags_rel   ArticleTag[]
+  comments   Comment[]
+  bookmarks  Bookmark[]
+
+  @@index([slug])
+  @@index([authorId])
+  @@index([sportId])
+  @@index([tournamentId])
+  @@index([matchId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([isFeatured])
+  @@index([isBreaking])
+  @@map("articles")
+}
+
+model ArticleCategory {
+  id        String   @id @default(cuid())
+  articleId String
+  name      String
+  slug      String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([slug])
+  @@map("article_categories")
+}
+
+model ArticleTag {
+  id        String   @id @default(cuid())
+  articleId String
+  name      String
+  slug      String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([slug])
+  @@map("article_tags")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  articleId String
+  userId    String
+  content   String   @db.Text
+  parentId  String?
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  article  Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Comment?   @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[]  @relation("CommentReplies")
+
+  @@index([articleId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  articleId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([userId])
+  @@map("bookmarks")
+}
+
+// ─────────────────────────────────────────────
+// 6. FAVORITES
+// ─────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  entityType String
+  entityId  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model TeamFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+  @@map("team_follows")
+}
+
+model PlayerFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  playerId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, playerId])
+  @@index([userId])
+  @@index([playerId])
+  @@map("player_follows")
+}
+
+// ─────────────────────────────────────────────
+// 7. NOTIFICATIONS
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id              String           @id @default(cuid())
+  userId          String
+  type            NotificationType
+  isEnabled       Boolean          @default(true)
+  emailEnabled    Boolean          @default(false)
+  pushEnabled     Boolean          @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+// ─────────────────────────────────────────────
+// 8. SUBSCRIPTIONS
+// ─────────────────────────────────────────────
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  plan      String
+  status    String   @default("active")
+  startDate DateTime
+  endDate   DateTime?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────
+// 9. STANDINGS
+// ─────────────────────────────────────────────
+
+model Standing {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  teamId        String
+  position      Int
+  played        Int      @default(0)
+  won           Int      @default(0)
+  lost          Int      @default(0)
+  drawn         Int      @default(0)
+  points        Int      @default(0)
+  netRunRate    Float?
+  form          String?
+  updatedAt     DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  team       Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId])
+  @@index([teamId])
+  @@map("standings")
+}
+
+// ─────────────────────────────────────────────
+// 10. HEAD TO HEAD
+// ─────────────────────────────────────────────
+
+model HeadToHead {
+  id          String   @id @default(cuid())
+  sportId     String
+  homeTeamId  String
+  awayTeamId  String
+  totalMatches Int     @default(0)
+  homeWins    Int      @default(0)
+  awayWins    Int      @default(0)
+  draws       Int      @default(0)
+  lastMeeting DateTime?
+  metadata    Json?
+  updatedAt   DateTime @updatedAt
+
+  sport    Sport @relation(fields: [sportId], references: [id])
+  homeTeam Team  @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team  @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  @@unique([sportId, homeTeamId, awayTeamId])
+  @@index([sportId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("head_to_head")
+}
+
+// ─────────────────────────────────────────────
+// 11. PREDICTIONS
+// ─────────────────────────────────────────────
+
+model Prediction {
+  id          String   @id @default(cuid())
+  sportId     String?
+  matchId     String?
+  title       String
+  description String?  @db.Text
+  prediction  String
+  confidence  Float?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  sport          Sport?           @relation(fields: [sportId], references: [id])
+  match          Match?           @relation(fields: [matchId], references: [id])
+  userPredictions UserPrediction[]
+
+  @@index([sportId])
+  @@index([matchId])
+  @@map("predictions")
+}
+
+model UserPrediction {
+  id           String   @id @default(cuid())
+  predictionId String
+  userId       String
+  choice       String
+  createdAt    DateTime @default(now())
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionId, userId])
+  @@index([predictionId])
+  @@index([userId])
+  @@map("user_predictions")
+}
+
+// ─────────────────────────────────────────────
+// 12. NEWSLETTER
+// ─────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  userId    String?  @unique
+  name      String?
+  isActive  Boolean  @default(true)
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("newsletter_subscribers")
+}
