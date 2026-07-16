@@ -88,3 +88,5 @@ checkpoints/
 *.tgz
 *.tar.gz
 .cache/
+
+.vercel
