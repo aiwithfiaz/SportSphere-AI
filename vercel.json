@@ -10,12 +10,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "NEXTAUTH_SECRET": "@nextauth-secret",
-    "DATABASE_URL": "@database-url",
-    "STRIPE_SECRET_KEY": "@stripe-secret-key",
-    "OPENAI_API_KEY": "@openai-api-key"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
