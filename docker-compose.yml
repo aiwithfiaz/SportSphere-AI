@@ -1,0 +1,205 @@
+services:
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: sportsphere-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-sportsphere_ai}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-sportsphere_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - sportsphere-network
+
+  # ===========================================
+  # Redis Cache & Message Queue
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: sportsphere-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sportsphere-network
+
+  # ===========================================
+  # PostgreSQL Admin (pgAdmin)
+  # ===========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sportsphere-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sportsphere.ai
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sportsphere-network
+    profiles:
+      - tools
+
+  # ===========================================
+  # Redis Commander (Redis UI)
+  # ===========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: sportsphere-redis-commander
+    restart: unless-stopped
+    ports:
+      - "6380:8081"
+    environment:
+      REDIS_HOSTS: "local:redis:6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - sportsphere-network
+    profiles:
+      - tools
+
+  # ===========================================
+  # Meilisearch (Full-text Search)
+  # ===========================================
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: sportsphere-meilisearch
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-your-meilisearch-api-key}
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: true
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sportsphere-network
+    profiles:
+      - search
+
+  # ===========================================
+  # App Container (Next.js Web)
+  # ===========================================
+  web:
+    build:
+      context: .
+      dockerfile: ./docker/web/Dockerfile
+      args:
+        - NODE_ENV=development
+    container_name: sportsphere-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sportsphere_ai
+      - REDIS_URL=redis://redis:6379
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - /app/apps/web/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportsphere-network
+
+  # ===========================================
+  # API Container (Express/Fastify Backend)
+  # ===========================================
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/api/Dockerfile
+      args:
+        - NODE_ENV=development
+    container_name: sportsphere-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sportsphere_ai
+      - REDIS_URL=redis://redis:6379
+      - API_PORT=3001
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - /app/apps/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportsphere-network
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  sportsphere-network:
+    driver: bridge
+    name: sportsphere-network
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  postgres_data:
+    driver: local
+    name: sportsphere-postgres-data
+  redis_data:
+    driver: local
+    name: sportsphere-redis-data
+  pgadmin_data:
+    driver: local
+    name: sportsphere-pgadmin-data
+  meilisearch_data:
+    driver: local
+    name: sportsphere-meilisearch-data
+
+# ===========================================
+# Usage:
+# docker compose up -d              (core services)
+# docker compose --profile tools up -d  (with admin UIs)
+# docker compose --profile search up -d (with Meilisearch)
+# docker compose --profile tools --profile search up -d (all)
+# ===========================================

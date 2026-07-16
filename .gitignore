@@ -1,0 +1,90 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+*.lcov
+.vitest/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# TypeScript
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+*.pid
+*.seed
+
+# Runtime
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Uploads
+uploads/
+tmp/
+temp/
+
+# Database
+*.sqlite
+*.sqlite3
+
+# AI/ML
+*.model
+*.weights
+*.bin
+models/
+checkpoints/
+
+# Miscellaneous
+*.tgz
+*.tar.gz
+.cache/

@@ -1,0 +1,35 @@
+{
+  "name": "@sportsphere/admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@sportsphere/ui": "workspace:*",
+    "@sportsphere/database": "workspace:*",
+    "@sportsphere/config": "workspace:*",
+    "@sportsphere/utils": "workspace:*",
+    "next": "15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "next-auth": "^5.0.0-beta.28",
+    "@tanstack/react-query": "^5.80.0",
+    "zustand": "^5.0.5",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.25.1",
+    "eslint-config-next": "15.3.2",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}

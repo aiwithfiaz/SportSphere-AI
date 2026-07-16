@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "composite": false,
+    "baseUrl": ".",
+    "paths": {
+      "@sportsphere/*": ["./packages/*"],
+      "@sportsphere/types": ["./packages/types/src"],
+      "@sportsphere/utils": ["./packages/utils/src"],
+      "@sportsphere/config": ["./packages/config/src"],
+      "@sportsphere/ui": ["./packages/ui/src"]
+    },
+    "types": ["node", "vitest/globals"]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".turbo"
+  ]
+}
