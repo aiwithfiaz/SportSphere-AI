@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Trophy, Radio, Newspaper, Users, User, Settings, Bell, Shield, LogIn, UserPlus, Globe, Wrench, Video, Search, Calculator, Swords } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export interface MobileNavProps extends React.HTMLAttributes<HTMLDivElement> {
   onNavigate?: () => void;
@@ -118,14 +119,15 @@ const MobileNav = React.forwardRef<HTMLDivElement, MobileNavProps>(
         <Separator />
 
         {/* Auth Buttons */}
-        <div className="flex flex-col space-y-2">
-          <Button variant="ghost" asChild className="justify-start gap-2">
+        <div className="flex items-center gap-2 mt-2">
+          <ThemeToggle />
+          <Button variant="ghost" asChild className="justify-start gap-2 flex-1">
             <Link href="/login" onClick={onNavigate}>
               <LogIn className="h-4 w-4" />
               Log in
             </Link>
           </Button>
-          <Button asChild className="gap-2">
+          <Button asChild className="gap-2 flex-1">
             <Link href="/register" onClick={onNavigate}>
               <UserPlus className="h-4 w-4" />
               Sign up

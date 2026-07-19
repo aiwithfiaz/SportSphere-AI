@@ -12,6 +12,7 @@ import {
   Shield, Star, Search, Bell, ChevronDown, Zap, Globe, BarChart3
 } from "lucide-react";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const sportsDropdown = [
   { name: "Cricket", href: "/matches?sport=cricket", icon: "🏏" },
@@ -194,6 +195,7 @@ const Header = React.forwardRef<HTMLElement, any>(
                   <Search className="h-4 w-4" />
                 </Link>
               </Button>
+              <ThemeToggle />
               <Button variant="ghost" asChild className="text-sm">
                 <Link href="/login">Log in</Link>
               </Button>
