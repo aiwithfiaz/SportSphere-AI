@@ -23,38 +23,46 @@ export const metadata: Metadata = {
 };
 
 async function getLiveMatches() {
-  return prisma.match.findMany({
-    where: { status: { in: ["LIVE", "IN_PROGRESS"] } },
-    include: { sport: true, tournament: true, homeTeam: true, awayTeam: true, venue: true, liveScore: true },
-    orderBy: { scheduledAt: "desc" },
-    take: 6,
-  });
+  try {
+    return await prisma.match.findMany({
+      where: { status: { in: ["LIVE", "IN_PROGRESS"] } },
+      include: { sport: true, tournament: true, homeTeam: true, awayTeam: true, venue: true, liveScore: true },
+      orderBy: { scheduledAt: "desc" },
+      take: 6,
+    });
+  } catch { return []; }
 }
 
 async function getUpcomingMatches() {
-  return prisma.match.findMany({
-    where: { status: "SCHEDULED" },
-    include: { sport: true, tournament: true, homeTeam: true, awayTeam: true, venue: true },
-    orderBy: { scheduledAt: "asc" },
-    take: 6,
-  });
+  try {
+    return await prisma.match.findMany({
+      where: { status: "SCHEDULED" },
+      include: { sport: true, tournament: true, homeTeam: true, awayTeam: true, venue: true },
+      orderBy: { scheduledAt: "asc" },
+      take: 6,
+    });
+  } catch { return []; }
 }
 
 async function getLatestNews() {
-  return prisma.article.findMany({
-    where: { status: "PUBLISHED" },
-    include: { author: true, sport: true },
-    orderBy: { publishedAt: "desc" },
-    take: 4,
-  });
+  try {
+    return await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      include: { author: true, sport: true },
+      orderBy: { publishedAt: "desc" },
+      take: 4,
+    });
+  } catch { return []; }
 }
 
 async function getSports() {
-  return prisma.sport.findMany({
-    where: { isActive: true },
-    include: { _count: { select: { matches: true, teams: true } } },
-    orderBy: { name: "asc" },
-  });
+  try {
+    return await prisma.sport.findMany({
+      where: { isActive: true },
+      include: { _count: { select: { matches: true, teams: true } } },
+      orderBy: { name: "asc" },
+    });
+  } catch { return []; }
 }
 
 function transformMatch(dbMatch: any): Match {
