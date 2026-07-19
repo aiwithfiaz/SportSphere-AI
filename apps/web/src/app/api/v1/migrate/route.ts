@@ -975,10 +975,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const statements = MIGRATION_SQL
+    const cleanedSql = MIGRATION_SQL
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join("\n");
+
+    const statements = cleanedSql
       .split(/;\s*\n/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith("--"));
+      .map(s => {
+        const lines = s.split("\n").filter(l => !l.trim().startsWith("--"));
+        return lines.join("\n").trim();
+      })
+      .filter(s => s.length > 0);
 
     const results: string[] = [];
     for (const stmt of statements) {
