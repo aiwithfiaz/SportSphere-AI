@@ -12,7 +12,7 @@
     "dev": "pnpm run --parallel -r --filter './apps/**' dev",
     "dev:web": "pnpm run --filter web dev",
     "dev:api": "pnpm run --filter api dev",
-    "build": "pnpm run --parallel -r build",
+    "build": "pnpm --filter @sportsphere/web --filter @sportsphere/ws-server run build",
     "build:web": "pnpm run --filter web build",
     "build:api": "pnpm run --filter api build",
     "lint": "pnpm run --parallel -r lint",
