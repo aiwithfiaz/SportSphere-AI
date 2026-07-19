@@ -90,3 +90,4 @@ checkpoints/
 .cache/
 
 .vercel
+.env*
