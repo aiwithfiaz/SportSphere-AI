@@ -187,26 +187,26 @@ export default function PredictionsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {SPORT_INSIGHTS.map((sport) => (
+              {SPORT_INSIGHTS.map((insight) => (
                 <div
-                  key={sport.sport}
+                  key={insight.sport}
                   className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                    sport.sport.toLowerCase() === (sport === "all" ? "" : sport)
+                    sport === insight.sport.toLowerCase()
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                       : ""
                   }`}
-                  onClick={() => setSport(sport.sport.toLowerCase())}
+                  onClick={() => setSport(insight.sport.toLowerCase())}
                 >
-                  <div className="text-3xl mb-2">{sport.icon}</div>
-                  <p className="font-semibold text-sm">{sport.sport}</p>
+                  <div className="text-3xl mb-2">{insight.icon}</div>
+                  <p className="font-semibold text-sm">{insight.sport}</p>
                   <div className="flex items-center gap-1 mt-1">
-                    <p className="text-lg font-bold text-green-600">{sport.accuracy}%</p>
-                    <Badge variant="secondary" className="text-[10px]">{sport.trend}</Badge>
+                    <p className="text-lg font-bold text-green-600">{insight.accuracy}%</p>
+                    <Badge variant="secondary" className="text-[10px]">{insight.trend}</Badge>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {sport.predictions.toLocaleString()} predictions
+                    {insight.predictions.toLocaleString()} predictions
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{sport.modelVersion}</p>
+                  <p className="text-[10px] text-muted-foreground">{insight.modelVersion}</p>
                 </div>
               ))}
             </div>
