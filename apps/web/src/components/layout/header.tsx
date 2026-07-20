@@ -15,12 +15,12 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const sportsDropdown = [
-  { name: "Cricket", href: "/matches?sport=cricket", icon: "🏏" },
-  { name: "Football", href: "/matches?sport=football", icon: "⚽" },
-  { name: "Basketball", href: "/matches?sport=basketball", icon: "🏀" },
-  { name: "Baseball", href: "/matches?sport=baseball", icon: "⚾" },
-  { name: "Hockey", href: "/matches?sport=hockey", icon: "🏒" },
-  { name: "Tennis", href: "/matches?sport=tennis", icon: "🎾" },
+  { name: "Cricket", href: "/matches/cricket", icon: "🏏" },
+  { name: "Football", href: "/matches/football", icon: "⚽" },
+  { name: "Basketball", href: "/matches/basketball", icon: "🏀" },
+  { name: "Baseball", href: "/matches/baseball", icon: "⚾" },
+  { name: "Hockey", href: "/matches/hockey", icon: "🏒" },
+  { name: "Tennis", href: "/matches/tennis", icon: "🎾" },
 ];
 
 const Header = React.forwardRef<HTMLElement, any>(

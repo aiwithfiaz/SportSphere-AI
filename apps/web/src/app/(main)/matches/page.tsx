@@ -11,8 +11,13 @@ export const metadata: Metadata = {
   description: "Watch live scores and match updates from around the world",
 };
 
-async function getMatches() {
+async function getMatches(sport?: string) {
+  const where: any = {};
+  if (sport) {
+    where.sport = { slug: sport };
+  }
   const matches = await prisma.match.findMany({
+    where,
     include: {
       sport: true,
       tournament: true,
@@ -26,11 +31,15 @@ async function getMatches() {
   return matches;
 }
 
-async function getLiveMatches() {
+async function getLiveMatches(sport?: string) {
+  const where: any = {
+    status: { in: ["LIVE", "IN_PROGRESS"] },
+  };
+  if (sport) {
+    where.sport = { slug: sport };
+  }
   const matches = await prisma.match.findMany({
-    where: {
-      status: { in: ["LIVE", "IN_PROGRESS"] },
-    },
+    where,
     include: {
       sport: true,
       tournament: true,
@@ -71,10 +80,11 @@ function transformMatch(dbMatch: any): Match {
   };
 }
 
-export default async function MatchesPage() {
+export default async function MatchesPage({ searchParams }: { searchParams: Promise<{ sport?: string }> }) {
+  const { sport } = await searchParams;
   const [matches, liveMatches] = await Promise.all([
-    getMatches(),
-    getLiveMatches(),
+    getMatches(sport),
+    getLiveMatches(sport),
   ]);
 
   return (
